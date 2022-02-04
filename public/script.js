@@ -4,10 +4,7 @@ const socket = io('/');
 const videoGrid = document.getElementById('video-grid')
 
 // peerjs server to create users
-const myPeer = new Peer(undefined, {
-  host: '/',
-  port: '3001'
-});
+const myPeer = new Peer(undefined);
 
 const myVideo = document.createElement('video')
 // Mutes user's own video audio
