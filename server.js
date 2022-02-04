@@ -17,9 +17,18 @@ app.get('/:room', (req, res) => {
 
 // Runs any time someone connects to web page
 io.on('connection', socket => {
+
   // Event: When someone connects to a room
   socket.on('join-room', (roomId, userId) => {
-    console.log(roomId, userId)
+    socket.join(roomId)
+
+    // Broadcast message to everyone else in the same room
+    socket.to(roomId).emit('user-connected', userId)
+
+    // When user leaves call (closes tab/browser)
+    socket.on('disconnect', () => {
+      socket.to(roomId).emit('user-disconnected', userId)
+    })
   })
 })
 
