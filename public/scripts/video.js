@@ -1,42 +1,45 @@
 // Server is set up at root path
 const socket = io('/');
 
-const videoGrid = document.getElementById('video-grid')
-
 // peerjs server to create users
 const myPeer = new Peer(undefined);
 
-const myVideo = document.createElement('video')
+const ownVideo = document.getElementById('own-video')
 // Mutes user's own video audio
-myVideo.muted = true
+//ownVideo.muted = true
+
+const peerVideo = document.getElementById('peer-video')
 
 const peers = {}
 
 navigator.mediaDevices.getUserMedia({
   video: true,
   audio: true
-}).then(stream => {
-  addVideoStream(myVideo, stream)
+}).then(ownStream => {
+  addVideoStream(ownVideo, ownStream)
 
   // When someone tries to call, this answers and sends stream
   myPeer.on('call', call => {
-    call.answer(stream)
-    
-    // New video element
-    const video = document.createElement('video')
-    call.on('stream', userVideoStream => {
-      addVideoStream(video, userVideoStream)
+    call.answer(ownStream)
+    toggleVideoSizes()
+    call.on('stream', peerVideoStream => {
+      addVideoStream(peerVideo, peerVideoStream)
+      peerVideo.classList.remove('hidden')
     })
+    
   })
 
   socket.on('user-connected', userId => {
     // Sends current video stream to new user
-    connectToNewUser(userId, stream)
+    connectToNewUser(userId, ownStream)
+    toggleVideoSizes()
   })
+  
 })
 
 // When user disconnects, remove id/call association in peers object
 socket.on('user-disconnected', userId => {
+  console.log(userId, ' disconnected')
   if (peers[userId]) peers[userId].close()
 })
 
@@ -46,21 +49,21 @@ myPeer.on('open', id => {
   socket.emit('join-room', ROOM_ID, id);
 });
 
-function connectToNewUser(userId, stream) {
+function connectToNewUser(userId, ownStream) {
   // Calls user with userId and sends video stream
-  const call = myPeer.call(userId, stream)
-  
-  // Creates new video element for new user's stream
-  const video = document.createElement('video')
+  const call = myPeer.call(userId, ownStream)
   
   // When called user sends back their stream this event takes in their stream
-  call.on('stream', userVideoStream => {
-    addVideoStream(video, userVideoStream)
+  call.on('stream', peerVideoStream => {
+    addVideoStream(peerVideo, peerVideoStream)
+
+    peerVideo.classList.remove('hidden')
   })
 
-  // When someone leaves the call, their video is removed
+  // When someone leaves the call, their video element is hidden
   call.on('close', () => {
-    video.remove()
+    peerVideo.classList.add('hidden')
+    toggleVideoSizes()
   })
 
   // Every userId is linked to a call
@@ -74,7 +77,16 @@ function addVideoStream(video, stream) {
   video.addEventListener('loadedmetadata', () => {
     video.play()
   })
+}
 
-  // Append new video to grid of existing videos
-  videoGrid.append(video)
+function toggleVideoSizes() {
+  console.log('toggling')
+  ownVideo.classList.toggle('small-video')
+  ownVideo.classList.toggle('large-video')
+  peerVideo.classList.toggle('small-video')
+  peerVideo.classList.toggle('large-video')
+}
+
+function handleDisconnect() {
+
 }

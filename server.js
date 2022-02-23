@@ -6,6 +6,7 @@ const { v4: uuidV4 } = require('uuid');
 
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
+app.use('/css', express.static(__dirname + 'public/css'))
 
 app.get('/', (req, res) => {
   res.redirect(`/${uuidV4()}`);
